@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Final Processing</h1>
+
+<form action="{{ url_for('final_process') }}" method="post">
+    <div class="mb-3">
+        <label for="provider" class="form-label">AI Provider:</label>
+        <select class="form-select" id="provider" name="provider" required>
+            <option value="together">Together AI</option>
+            <option value="google">Google AI</option>
+            <option value="googlepro">Google AI Pro</option>
+            <option value="groq">Groq</option>
+            <option value="openai">OpenAI</option>
+            <option value="openaimini">OpenAI Mini</option>
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label for="system_message" class="form-label">System Message:</label>
+        <textarea class="form-control" id="system_message" name="system_message" rows="3" required></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label for="final_prompt" class="form-label">Final Prompt:</label>
+        <textarea class="form-control" id="final_prompt" name="final_prompt" rows="3" required></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label for="additional_context" class="form-label">Additional Context:</label>
+        <textarea class="form-control" id="additional_context" name="additional_context" rows="3"></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label for="temperature" class="form-label">Temperature:</label>
+        <input type="number" class="form-control" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.7" required>
+    </div>
+    
+    <div class="mb-3">
+        <label for="max_tokens" class="form-label">Max Tokens:</label>
+        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="1000" required>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Process Final Result</button>
+</form>
+{% endblock %}

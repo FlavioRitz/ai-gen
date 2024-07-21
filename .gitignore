@@ -29,7 +29,8 @@ Thumbs.db
 # Project specific
 uploads/
 session_files/
-*.txt
+Resultado*.*
+
 
 # PyCharm
 .idea/

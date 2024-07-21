@@ -26,8 +26,8 @@ This Flask-based web application allows users to upload PDF files, process them 
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/your-repo-name.git
-   cd your-repo-name
+   git clone https://github.com/FlavioRitz/ai-gen.git
+   cd ai-gen
    ```
 
 2. Create a virtual environment and activate it:
