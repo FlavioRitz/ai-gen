@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="mb-4">Final Processing Result</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">AI Response</h5>
+        <p>{{ response }}</p>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+    <form action="{{ url_for('save_results') }}" method="post" class="d-inline">
+        <button type="submit" class="btn btn-success">Save Results</button>
+    </form>
+</div>
+
+{% endblock %}

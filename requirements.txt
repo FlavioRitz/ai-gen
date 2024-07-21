@@ -1,0 +1,9 @@
+Flask==2.3.2
+Werkzeug==2.3.3
+PyPDF2
+tiktoken
+together
+google-generativeai
+groq
+openai
+python-dotenv
