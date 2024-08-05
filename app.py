@@ -82,6 +82,24 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
         response = chat_session.send_message(user_input)    
         return response.text
 
+
+    elif provider =='googleproexp':
+        generation_config = {
+            "temperature": float(temperature),
+            "top_p": 0.95,
+            "top_k": 64,
+            "max_output_tokens": int(max_tokens),
+            "response_mime_type": "text/plain",
+        }
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
+            generation_config=generation_config,
+            system_instruction=system_message,
+        )
+        chat_session = model.start_chat(history=[])
+        response = chat_session.send_message(user_input)    
+        return response.text
+
     elif provider =='googlepro':
         generation_config = {
             "temperature": float(temperature),
