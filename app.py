@@ -202,7 +202,8 @@ def process_pdf():
     extracted_text = extract_text_from_pdf(file_path)
     
     provider = request.form['provider']
-    system_message = request.form['system_message']
+    #system_message = request.form['system_message']
+    system_message ="Atue como um excelente assistente jurídico de um juiz de direito ou um juiz federal"
     user_prompt = request.form['user_prompt']
     temperature = request.form['temperature']
     max_tokens = request.form['max_tokens']
