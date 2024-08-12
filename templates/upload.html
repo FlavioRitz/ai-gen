@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h1 class="mb-4">Upload PDF</h1>
-
+<h1 class="mb-4">Upload PDF (Optional)</h1>
 <form action="{{ url_for('upload_pdf') }}" method="post" enctype="multipart/form-data">
     <div class="mb-3">
-        <label for="file" class="form-label">Select PDF File:</label>
-        <input type="file" class="form-control" id="file" name="file" accept=".pdf" required>
+        <label for="file" class="form-label">Select PDF File (Optional):</label>
+        <input type="file" class="form-control" id="file" name="file" accept=".pdf">
     </div>
-    
-    <button type="submit" class="btn btn-primary">Upload PDF</button>
+    <button type="submit" class="btn btn-primary">Continue with PDF</button>
 </form>
+<div class="mt-3">
+    <a href="{{ url_for('process_pdf') }}" class="btn btn-secondary">Continue without PDF</a>
+</div>
 {% endblock %}
