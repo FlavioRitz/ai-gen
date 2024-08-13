@@ -34,6 +34,20 @@
             <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI GPT4-mini</option>
         </select>
     </div>
+    <div class="mb-3">
+        <label for="saved_prompts" class="form-label">Saved Prompts:</label>
+        <select class="form-select" id="saved_prompts" onchange="loadSelectedPrompt()">
+            <option value="">Select a saved prompt</option>
+            {% for prompt in saved_prompts %}
+                <option value="{{ prompt.prompt }}">{{ prompt.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="prompt_title" class="form-label">Prompt Title:</label>
+        <input type="text" class="form-control" id="prompt_title" name="prompt_title">
+    </div>
 
     <div class="mb-3">
         <label for="user_prompt" class="form-label">User Prompt:</label>
@@ -52,9 +66,41 @@
 
     <div class="mb-3">
         <label for="max_tokens" class="form-label">Max Tokens:</label>
-        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', '1000') }}" required>
+        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', '2000') }}" required>
     </div>
 
+    <button type="button" class="btn btn-secondary" onclick="savePrompt()">Save Prompt</button>
     <button type="submit" class="btn btn-primary">Process</button>
 </form>
+
+<script>
+    function loadSelectedPrompt() {
+        var select = document.getElementById('saved_prompts');
+        var promptArea = document.getElementById('user_prompt');
+        promptArea.value = select.value;
+    }
+    
+    function savePrompt() {
+        var title = document.getElementById('prompt_title').value;
+        var prompt = document.getElementById('user_prompt').value;
+        if (title && prompt) {
+            fetch('{{ url_for("save_prompt_route") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'prompt_title=' + encodeURIComponent(title) + '&user_prompt=' + encodeURIComponent(prompt)
+            }).then(response => {
+                if (response.ok) {
+                    alert('Prompt saved successfully!');
+                    location.reload();
+                } else {
+                    alert('Failed to save prompt.');
+                }
+            });
+        } else {
+            alert('Please enter both a title and a prompt to save.');
+        }
+    }
+    </script>
 {% endblock %}

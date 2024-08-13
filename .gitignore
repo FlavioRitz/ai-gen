@@ -30,6 +30,8 @@ Thumbs.db
 uploads/
 session_files/
 Resultado*.*
+saved_prompts.json
+
 
 
 # PyCharm

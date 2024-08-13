@@ -21,6 +21,8 @@ app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SESSION_FILE_DIR'] = 'session_files'
 
+PROMPTS_FILE = 'saved_prompts.json'
+
 # Ensure session file directory exists
 os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
 
@@ -32,6 +34,18 @@ together_client = Together(api_key=os.getenv('TOGETHER_API_KEY'))
 genai.configure(api_key=os.getenv('GOOGLE_AI_API_KEY'))
 groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+def load_saved_prompts():
+    if os.path.exists(PROMPTS_FILE):
+        with open(PROMPTS_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_prompt(title, prompt):
+    prompts = load_saved_prompts()
+    prompts.append({'title': title, 'prompt': prompt})
+    with open(PROMPTS_FILE, 'w') as f:
+        json.dump(prompts, f)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -174,6 +188,13 @@ def load_session_data(session_id):
 def index():
     return redirect(url_for('process_pdf'))
 
+@app.route('/save_prompt', methods=['POST'])
+def save_prompt_route():
+    title = request.form['prompt_title']
+    prompt = request.form['user_prompt']
+    save_prompt(title, prompt)
+    return redirect(url_for('process_pdf'))
+
 @app.route('/process', methods=['GET', 'POST'])
 def process_pdf():
     if request.method == 'POST':
@@ -244,7 +265,8 @@ def process_pdf():
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else {}
         form_data = data.get('form_data', {}) if isinstance(data, dict) else {}
-        return render_template('process.html', filename='', token_count=0, form_data=form_data)
+        saved_prompts = load_saved_prompts()
+        return render_template('process.html', filename='', token_count=0, form_data=form_data, saved_prompts=saved_prompts)
     
 @app.route('/reset', methods=['POST'])
 def reset():
