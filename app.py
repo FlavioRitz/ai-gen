@@ -174,23 +174,6 @@ def load_session_data(session_id):
 def index():
     return redirect(url_for('process_pdf'))
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_pdf():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('process.html', filename='', token_count=0)
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('process.html', filename='', token_count=0)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            extracted_text = extract_text_from_pdf(file_path)
-            token_count = count_tokens(extracted_text)
-            return render_template('process.html', filename=filename, token_count=token_count)
-    return render_template('upload.html')
-
 @app.route('/process', methods=['GET', 'POST'])
 def process_pdf():
     if request.method == 'POST':
@@ -239,10 +222,14 @@ def process_pdf():
         
         pdf_results = data.get('pdf_results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
         
-        pdf_results.append({
+        new_result = {
             'title': title,
-            'response': response
-        })
+            'response': response,
+            'token_count': token_count,
+            'filename': filename
+        }
+        
+        pdf_results.append(new_result)
         
         new_data = {
             'pdf_results': pdf_results,
@@ -252,7 +239,7 @@ def process_pdf():
         session['session_id'] = new_session_id
         
         # Render results page
-        return render_template('results.html', results=pdf_results, latest_result={'title': title, 'response': response})
+        return render_template('results.html', results=pdf_results, latest_result=new_result)
     else:
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else {}
