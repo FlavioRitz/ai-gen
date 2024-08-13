@@ -172,12 +172,7 @@ def load_session_data(session_id):
 
 @app.route('/')
 def index():
-    session_id = session.get('session_id')
-    data = load_session_data(session_id) if session_id else {}
-    
-    pdf_results = data.get('pdf_results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
-    
-    return render_template('index.html', results=pdf_results)
+    return redirect(url_for('process_pdf'))
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_pdf():
@@ -199,16 +194,24 @@ def upload_pdf():
 @app.route('/process', methods=['GET', 'POST'])
 def process_pdf():
     if request.method == 'POST':
-        # Existing POST logic
-        filename = request.form.get('filename', '')
-        title = request.form['title']
-        
-        extracted_text = ""
-        if filename:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            if os.path.exists(file_path):
+        # File handling
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
                 extracted_text = extract_text_from_pdf(file_path)
+                token_count = count_tokens(extracted_text)
+            else:
+                filename = ''
+                token_count = 0
+        else:
+            filename = request.form.get('filename', '')
+            token_count = int(request.form.get('token_count', 0))
         
+        # Process form data
+        title = request.form['title']
         provider = request.form['provider']
         system_message = "Atue como um excelente assistente jurídico de um juiz de direito ou um juiz federal"
         user_prompt = request.form['user_prompt']
@@ -216,13 +219,21 @@ def process_pdf():
         max_tokens = request.form['max_tokens']
         additional_context = request.form['additional_context']
         
-        if extracted_text:
-            full_prompt = f"{user_prompt}\n\nContext from PDF:\n{extracted_text}\n\nAdditional Context:\n{additional_context}"
+        # Prepare full prompt
+        if filename:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.exists(file_path):
+                extracted_text = extract_text_from_pdf(file_path)
+                full_prompt = f"{user_prompt}\n\nContext from PDF:\n{extracted_text}\n\nAdditional Context:\n{additional_context}"
+            else:
+                full_prompt = f"{user_prompt}\n\nAdditional Context:\n{additional_context}"
         else:
             full_prompt = f"{user_prompt}\n\nAdditional Context:\n{additional_context}"
         
+        # Generate response
         response = generate_response(provider, system_message, full_prompt, temperature, max_tokens)
         
+        # Save results
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else {}
         
@@ -240,10 +251,13 @@ def process_pdf():
         new_session_id = save_session_data(new_data)
         session['session_id'] = new_session_id
         
-        return redirect(url_for('index'))
+        # Render results page
+        return render_template('results.html', results=pdf_results, latest_result={'title': title, 'response': response})
     else:
-        # GET request - render the form without PDF data
-        return render_template('process.html', filename='', token_count=0)
+        session_id = session.get('session_id')
+        data = load_session_data(session_id) if session_id else {}
+        form_data = data.get('form_data', {}) if isinstance(data, dict) else {}
+        return render_template('process.html', filename='', token_count=0, form_data=form_data)
     
 @app.route('/reset', methods=['POST'])
 def reset():

@@ -1,50 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-
 <h1 class="mb-4">Process PDF</h1>
 
-{% if filename %}
-    <p><strong>Uploaded File:</strong> {{ filename }}</p>
-    <p><strong>Token Count:</strong> {{ token_count }}</p>
-{% else %}
-    <p><strong>No file uploaded.</strong></p>
-{% endif %}
+<form action="{{ url_for('process_pdf') }}" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="file" class="form-label">Upload PDF (Optional):</label>
+        <input type="file" class="form-control" id="file" name="file" accept=".pdf">
+    </div>
+    
+    {% if filename %}
+    <div class="mb-3">
+        <strong>Uploaded File:</strong> {{ filename }}<br>
+        <strong>Token Count:</strong> {{ token_count }}
+        <input type="hidden" name="filename" value="{{ filename }}">
+        <input type="hidden" name="token_count" value="{{ token_count }}">
+    </div>
+    {% endif %}
 
-<form action="{{ url_for('process_pdf') }}" method="post">
-    <input type="hidden" name="filename" value="{{ filename }}">
     <div class="mb-3">
         <label for="title" class="form-label">Title:</label>
-        <input type="text" class="form-control" id="title" name="title" required>
+        <input type="text" class="form-control" id="title" name="title" value="{{ form_data.get('title', '') }}" required>
     </div>
+
     <div class="mb-3">
         <label for="provider" class="form-label">AI Provider:</label>
         <select class="form-select" id="provider" name="provider" required>
-            <option value="together">Together AI</option>
-            <option value="google">Google AI</option>
-            <option value="googleproexp">Google AI Pro</option>
-            <option value="googlepro">Google AI Pro 1.5</option>
-            <option value="groq">Groq</option>
-            <option value="openai">OpenAI</option>
-            <option value="openaimini">OpenAI GPT4-mini</option>
+            <option value="together" {% if form_data.get('provider') == 'together' %}selected{% endif %}>Together AI</option>
+            <option value="google" {% if form_data.get('provider') == 'google' %}selected{% endif %}>Google AI</option>
+            <option value="googleproexp" {% if form_data.get('provider') == 'googleproexp' %}selected{% endif %}>Google AI Pro</option>
+            <option value="googlepro" {% if form_data.get('provider') == 'googlepro' %}selected{% endif %}>Google AI Pro 1.5</option>
+            <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
+            <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>
+            <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI GPT4-mini</option>
         </select>
     </div>
+
     <div class="mb-3">
         <label for="user_prompt" class="form-label">User Prompt:</label>
-        <textarea class="form-control" id="user_prompt" name="user_prompt" rows="3" required></textarea>
+        <textarea class="form-control" id="user_prompt" name="user_prompt" rows="3" required>{{ form_data.get('user_prompt', '') }}</textarea>
     </div>
+
     <div class="mb-3">
         <label for="additional_context" class="form-label">Additional Context:</label>
-        <textarea class="form-control" id="additional_context" name="additional_context" rows="3"></textarea>
+        <textarea class="form-control" id="additional_context" name="additional_context" rows="3">{{ form_data.get('additional_context', '') }}</textarea>
     </div>
+
     <div class="mb-3">
         <label for="temperature" class="form-label">Temperature:</label>
-        <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" min="0" max="1" value="0.7" required>
+        <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" min="0" max="1" value="{{ form_data.get('temperature', '0.7') }}" required>
     </div>
+
     <div class="mb-3">
         <label for="max_tokens" class="form-label">Max Tokens:</label>
-        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="1000" required>
+        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', '1000') }}" required>
     </div>
-    <button type="submit" class="btn btn-primary">Process PDF</button>
-</form>
 
+    <button type="submit" class="btn btn-primary">Process</button>
+</form>
 {% endblock %}

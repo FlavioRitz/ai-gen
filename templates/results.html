@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4">PDF Processing Results</h1>
+
+<!-- <h2>Latest Result</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">{{ latest_result.title }}</h5>
+        <pre class="card-text">{{ latest_result.response }}</pre>
+    </div>
+</div> -->
+
+{% if results %}
+    <!-- <h2>PDF Processing Results</h2> -->
+    {% for result in results %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ result.title }}</h5>
+                <p class="card-text">{{ result.response }}</p>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No results available. Start by uploading a PDF or continuing without one.</p>
+{% endif %}
+
+<div class="mt-3">
+    <a href="{{ url_for('process_pdf') }}" class="btn btn-primary">Process Another PDF</a>
+{% if results %}
+    <a href="{{ url_for('final_process') }}" class="btn btn-success">Proceed to Final Processing</a>
+{% endif %}
+</div>
+{% endblock %}
