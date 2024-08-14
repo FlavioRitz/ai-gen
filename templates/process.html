@@ -81,8 +81,10 @@
     }
     
     function savePrompt() {
-        var title = document.getElementById('prompt_title').value;
-        var prompt = document.getElementById('user_prompt').value;
+        var titleInput = document.getElementById('prompt_title');
+        var promptArea = document.getElementById('user_prompt');
+        var title = titleInput.value;
+        var prompt = promptArea.value;
         if (title && prompt) {
             fetch('{{ url_for("save_prompt_route") }}', {
                 method: 'POST',
@@ -92,15 +94,31 @@
                 body: 'prompt_title=' + encodeURIComponent(title) + '&user_prompt=' + encodeURIComponent(prompt)
             }).then(response => {
                 if (response.ok) {
-                    alert('Prompt saved successfully!');
-                    location.reload();
+                    // Update the saved prompts list without reloading the page
+                    return response.json();
                 } else {
-                    alert('Failed to save prompt.');
+                    throw new Error('Failed to save prompt.');
                 }
+            }).then(data => {
+                updateSavedPromptsList(data.saved_prompts);
+                titleInput.value = ''; // Clear the title input
+            }).catch(error => {
+                console.error('Error:', error);
             });
         } else {
             alert('Please enter both a title and a prompt to save.');
         }
+    }
+    
+    function updateSavedPromptsList(savedPrompts) {
+        var select = document.getElementById('saved_prompts');
+        select.innerHTML = '<option value="">Select a saved prompt</option>';
+        savedPrompts.forEach(function(prompt) {
+            var option = document.createElement('option');
+            option.value = prompt.prompt;
+            option.textContent = prompt.title;
+            select.appendChild(option);
+        });
     }
     </script>
 {% endblock %}

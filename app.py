@@ -65,7 +65,7 @@ def count_tokens(text):
 def generate_response(provider, system_message, user_input, temperature, max_tokens):
     if provider == 'together':
         response = together_client.chat.completions.create(
-            model="meta-llama/Meta-Llama-3-70B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
@@ -75,10 +75,11 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             top_p=0.7,
             top_k=50,
             repetition_penalty=1,
-            stop=["<|eot_id|>"],
+            stop=["<|eot_id|>","<|eom_id|>"],
             stream=False
         )
         return response.choices[0].message.content
+
     elif provider == 'google':
         generation_config = {
             "temperature": float(temperature),
@@ -106,7 +107,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
+            model_name="gemini-1.5-pro-exp-0801", # Experimental model
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -160,7 +161,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
     
     elif provider == 'openaimini':
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-2024-08-06", # Added the new openai model
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
@@ -193,7 +194,9 @@ def save_prompt_route():
     title = request.form['prompt_title']
     prompt = request.form['user_prompt']
     save_prompt(title, prompt)
-    return redirect(url_for('process_pdf'))
+    saved_prompts = load_saved_prompts()
+    return jsonify({'success': True, 'saved_prompts': saved_prompts})
+
 
 @app.route('/process', methods=['GET', 'POST'])
 def process_pdf():
