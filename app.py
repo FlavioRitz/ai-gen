@@ -13,6 +13,9 @@ import shutil
 from datetime import datetime
 import uuid
 
+# Import the user authentication module
+from user_auth import login_required, register_user, authenticate_user
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -185,11 +188,42 @@ def load_session_data(session_id):
             return json.load(f)
     return None
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if authenticate_user(username, password):
+            session['user_id'] = username
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error='Invalid credentials')
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if register_user(username, password):
+            session['user_id'] = username
+            return redirect(url_for('index'))
+        else:
+            return render_template('register.html', error='Username already exists')
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return redirect(url_for('process_pdf'))
 
 @app.route('/save_prompt', methods=['POST'])
+@login_required
 def save_prompt_route():
     title = request.form['prompt_title']
     prompt = request.form['user_prompt']
@@ -199,6 +233,7 @@ def save_prompt_route():
 
 
 @app.route('/process', methods=['GET', 'POST'])
+@login_required
 def process_pdf():
     if request.method == 'POST':
         # File handling
@@ -272,6 +307,7 @@ def process_pdf():
         return render_template('process.html', filename='', token_count=0, form_data=form_data, saved_prompts=saved_prompts)
     
 @app.route('/reset', methods=['POST'])
+@login_required
 def reset():
     session_id = session.get('session_id')
     if session_id:
@@ -294,6 +330,7 @@ def reset():
     return redirect(url_for('index'))
 
 @app.route('/final_process', methods=['GET', 'POST'])
+@login_required
 def final_process():
     if request.method == 'POST':
         provider = request.form['provider']
@@ -303,19 +340,25 @@ def final_process():
         max_tokens = request.form['max_tokens']
         additional_context = request.form['additional_context']
         
+        # Handle optional PDF upload
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                extracted_text = extract_text_from_pdf(file_path)
+                additional_context += f"\n\nExtracted text from uploaded PDF:\n{extracted_text}"
+        
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else None
         
-        # Handle cases where data might be a list or a dictionary
         if isinstance(data, list):
             pdf_results = data
         elif isinstance(data, dict):
             pdf_results = data.get('pdf_results', [])
         else:
             pdf_results = []
-        
-        if not pdf_results:
-            return "No PDF results found. Please process PDFs before final processing.", 400
         
         previous_responses = "\n\n".join([f"Title: {result['title']}\nResponse: {result['response']}" for result in pdf_results])
         full_prompt = f"{final_prompt}\n\nPrevious Responses:\n{previous_responses}\n\nAdditional Context:\n{additional_context}"
@@ -332,11 +375,10 @@ def final_process():
         
         return render_template('final_result.html', response=response)
 
-    # For GET requests, we'll display the form and show available PDF results
+    # For GET requests
     session_id = session.get('session_id')
     data = load_session_data(session_id) if session_id else None
     
-    # Handle cases where data might be a list or a dictionary
     if isinstance(data, list):
         pdf_results = data
         form_data = {}
@@ -350,6 +392,7 @@ def final_process():
     return render_template('final_process.html', pdf_results=pdf_results, form_data=form_data)
     
 @app.route('/save_results', methods=['POST'])
+@login_required
 def save_results():
     session_id = session.get('session_id')
     data = load_session_data(session_id)
@@ -373,6 +416,7 @@ def save_results():
     return send_from_directory('.', filename, as_attachment=True)
 
 @app.route('/uploads/<filename>')
+@login_required
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 

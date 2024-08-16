@@ -122,3 +122,15 @@
     }
     </script>
 {% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're coming back from final_process
+    if (document.referrer.includes('final_process')) {
+        // Clear the additional context input
+        document.getElementById('additional_context').value = '';
+    }
+});
+</script>
+{% endblock %}

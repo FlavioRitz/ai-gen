@@ -3,6 +3,12 @@
 
 <h1 class="mb-4">Final Processing</h1>
 
+<form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="file" class="form-label">Upload PDF (Optional):</label>
+        <input type="file" class="form-control" id="file" name="file" accept=".pdf">
+    </div>
+
 {% if pdf_results %}
     <h2>Available PDF Results:</h2>
     <ul>
