@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Chatbot Interface</h1>
+    
+    <div id="chat-messages" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        {% for message in chat_history %}
+            {% if message.role != 'system' %}
+                <p><strong>{{ message.role|capitalize }}:</strong> {{ message.content }}</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form action="{{ url_for('chatbot_send') }}" method="post">
+        <div class="input-group mb-3">
+            <input type="text" name="message" class="form-control" placeholder="Type your message..." required>
+            <button class="btn btn-primary" type="submit">Send</button>
+        </div>
+    </form>
+    
+    <form action="{{ url_for('clear_chat') }}" method="post">
+        <button type="submit" class="btn btn-secondary">Clear Chat History</button>
+    </form>
+</div>
+{% endblock %}
