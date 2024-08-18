@@ -200,6 +200,49 @@ def login():
             return render_template('login.html', error='Invalid credentials')
     return render_template('login.html')
 
+@app.route('/chatbot', methods=['GET'])
+@login_required
+def chatbot():
+    chat_history = session.get('chat_history', [])
+    return render_template('chatbot.html', chat_history=chat_history)
+
+@app.route('/chatbot_send', methods=['POST'])
+@login_required
+def chatbot_send():
+    message = request.form['message']
+    chat_history = session.get('chat_history', [])
+    
+    if not chat_history:
+        # Initialize with system message
+        system_message = "You are a helpful assistant. Provide concise and accurate responses."
+        chat_history.append({"role": "system", "content": system_message})
+    
+    chat_history.append({"role": "user", "content": message})
+    
+    try:
+        # Use the OpenAI client for this example, but you can change it to any provider
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=chat_history,
+            max_tokens=150
+        )
+        
+        assistant_message = response.choices[0].message.content
+        chat_history.append({"role": "assistant", "content": assistant_message})
+        
+        session['chat_history'] = chat_history
+        
+        return redirect(url_for('chatbot'))
+    except Exception as e:
+        app.logger.error(f"Error in chatbot API call: {str(e)}")
+        return render_template('chatbot.html', chat_history=chat_history, error="An error occurred while processing your request.")
+
+@app.route('/clear_chat', methods=['POST'])
+@login_required
+def clear_chat():
+    session.pop('chat_history', None)
+    return redirect(url_for('chatbot'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
