@@ -23,21 +23,21 @@
                         <a class="nav-link {% if 'user_id' not in session %}disabled{% endif %}" 
                            href="{{ url_for('chatbot') if 'user_id' in session else '#' }}"
                            {% if 'user_id' not in session %}tabindex="-1" aria-disabled="true"{% endif %}>
-                            Assistente
+                            Assistente  
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'user_id' not in session %}disabled{% endif %}" 
                            href="{{ url_for('process_pdf') if 'user_id' in session else '#' }}"
                            {% if 'user_id' not in session %}tabindex="-1" aria-disabled="true"{% endif %}>
-                            Processamento de peças
+                            Processamento de peças  
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'user_id' not in session %}disabled{% endif %}" 
                            href="{{ url_for('reset') if 'user_id' in session else '#' }}"
                            {% if 'user_id' not in session %}tabindex="-1" aria-disabled="true"{% endif %}>
-                            Reset
+                            Reset  
                         </a>
                     </li>
                 </ul>
