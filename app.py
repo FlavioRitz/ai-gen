@@ -216,8 +216,25 @@ def chatbot():
 @app.route('/chatbot_send', methods=['POST'])
 @login_required
 def chatbot_send():
-    message = request.form['message']
+    message = request.form.get('message', '')
     chat_history = session.get('chat_history', [])
+    
+    # Handle PDF upload
+    if 'pdf' in request.files:
+        pdf_file = request.files['pdf']
+        if pdf_file and allowed_file(pdf_file.filename):
+            filename = secure_filename(pdf_file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            pdf_file.save(file_path)
+            
+            # Extract text from PDF
+            pdf_text = extract_text_from_pdf(file_path)
+            
+            # Prepend PDF text to the message
+            message = f"Aqui está o texto que estou enviando: {pdf_text}\n\n{message}"
+            
+            # Remove the temporary PDF file
+            os.remove(file_path)
     
     if not chat_history:
         # Initialize with system message
