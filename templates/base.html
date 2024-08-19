@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Processor and AI Integration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         body {
             padding-top: 00px;
@@ -14,44 +15,43 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Process PDF</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('final_process') }}">Final Processing</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('chatbot') }}">Chatbot</a>
-                    </li>
-                    <li class="nav-item">
-                        <form action="{{ url_for('reset') }}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-link nav-link">Reset</button>
-                        </form>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    {% if 'user_id' in session %}
-                    <li class="nav-item">
-                        <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a href="{{ url_for('login') }}" class="nav-link">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('register') }}" class="nav-link">Register</a>
-                    </li>
-                    {% endif %}
-            </div>
+          <a class="navbar-brand" href="{{ url_for('index') }}">IURIS AI</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+              {% if 'user_id' in session %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('chatbot') }}">Chatbot</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('process_pdf') }}">Process a PDF or send text</a>
+                </li>
+                <li class="nav-item">
+                  <form action="{{ url_for('reset') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-link nav-link">Reset</button>
+                  </form>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                </li>
+              {% else %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
         </div>
-    </nav>
-
-    <div class="container mt-4">
+      </nav>
+      
+      <div class="container mt-4">
         {% block content %}{% endblock %}
-    </div>
+      </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

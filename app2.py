@@ -204,13 +204,6 @@ def login():
 @login_required
 def chatbot():
     chat_history = session.get('chat_history', [])
-    
-    # If chat history is empty, initialize it with the system message
-    if not chat_history:
-        system_message = "Você atuará como um excelente assistente jurídico de um juiz de direito. Você trabalhará em uma interface no formato de chat. Você precisará perguntar as informações para o seu usuário. O seu objetivo é obter informações sobre qual foi o teor da sentença pedindo ao usuário que coloque o texto integral da sentença. Em seguida, você deve buscar do usuário saber qual foi o teor do recurso interposto pela parte autora, pelo INSS, pela União ou por outro órgão. Seu objetivo é também obter essas informações a respeito do recurso. Em seguida, você também poderá perguntar se a parte deseja inserir informações sobre um PPP, que é um perfil profissiográfico previdenciário, ou sobre um laudo pericial, que é o resultado do laudo das perícias médicas, muito utilizado nos casos em que se postula benefício providenciário por incapacidade ou aposentadoria por invalidez também denominados aposentadoria por incapacidade permanente ou auxílio-doença. Em seguida, você estará com todas essas informações e deverá elaborar um acordão. Mas primeiro você deve fazer um resumo da sentença. Esse resumo da sentença será composto por uma lista. Na verdade você vai listar os argumentos existentes na sentença. E na resposta não vai utilizar markdown, itens ou tópicos. Em seguida, você fará também uma listagem dos argumentos expostos no recurso inominado da parte autora, evitando repetições de palavras. Você fará um relatório sobre o recurso inominado, porém este relatório deve se focar na parte que interpôs o recurso. Por exemplo, diga o autor alega que o autor argumenta, etc. Ou o INSS argumenta, o INSS alega. Não diga o recurso alega, o recurso aponta. Foque na pessoa do recorrente, seja ele homem ou mulher."
-        chat_history.append({"role": "system", "content": system_message})
-        session['chat_history'] = chat_history
-    
     return render_template('chatbot.html', chat_history=chat_history)
 
 @app.route('/chatbot_send', methods=['POST'])
@@ -221,53 +214,29 @@ def chatbot_send():
     
     if not chat_history:
         # Initialize with system message
-        system_message = "Você atuará como um excelente assistente jurídico de um juiz de direito. Você trabalhará em uma interface no formato de chat. Você precisará perguntar as informações para o seu usuário. O seu objetivo é obter informações sobre qual foi o teor da sentença pedindo ao usuário que coloque o texto integral da sentença. Em seguida, você deve buscar do usuário saber qual foi o teor do recurso interposto pela parte autora, pelo INSS, pela União ou por outro órgão. Seu objetivo é também obter essas informações a respeito do recurso. Em seguida, você também poderá perguntar se a parte deseja inserir informações sobre um PPP, que é um perfil profissiográfico previdenciário, ou sobre um laudo pericial, que é o resultado do laudo das perícias médicas, muito utilizado nos casos em que se postula benefício providenciário por incapacidade ou aposentadoria por invalidez também denominados aposentadoria por incapacidade permanente ou auxílio-doença. Em seguida, você estará com todas essas informações e deverá elaborar um acordão. Mas primeiro você deve fazer um resumo da sentença. Esse resumo da sentença será composto por uma lista. Na verdade você vai listar os argumentos existentes na sentença. E na resposta não vai utilizar markdown, itens ou tópicos. Em seguida, você fará também uma listagem dos argumentos expostos no recurso inominado da parte autora, evitando repetições de palavras. Você fará um relatório sobre o recurso inominado, porém este relatório deve se focar na parte que interpôs o recurso. Por exemplo, diga o autor alega que o autor argumenta, etc. Ou o INSS argumenta, o INSS alega. Não diga o recurso alega, o recurso aponta. Foque na pessoa do recorrente, seja ele homem ou mulher."
+        system_message = "You are a helpful assistant. Provide concise and accurate responses."
         chat_history.append({"role": "system", "content": system_message})
     
     chat_history.append({"role": "user", "content": message})
     
+    # Gpt mini
     try:
-        generation_config = {
-            "temperature": 0.7,
-            "top_p": 0.95,
-            "top_k": 64,
-            "max_output_tokens": 3000,
-            "response_mime_type": "text/plain",
-        }
-        
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-exp-0801",
-            generation_config=generation_config,
+        # Use the OpenAI client for this example, but you can change it to any provider
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=chat_history,
+            max_tokens=3000
         )
         
-        # Convert chat history to the format expected by Gemini
-        gemini_history = []
-        for msg in chat_history:
-            if msg["role"] == "user":
-                gemini_history.append({"role": "user", "parts": [msg["content"]]})
-            elif msg["role"] == "assistant":
-                gemini_history.append({"role": "model", "parts": [msg["content"]]})
-        
-        chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(message)
-        
-        assistant_message = response.text
+        assistant_message = response.choices[0].message.content
         chat_history.append({"role": "assistant", "content": assistant_message})
         
-        # Store the updated chat history in the session
         session['chat_history'] = chat_history
         
-        return jsonify({
-            "status": "success",
-            "message": assistant_message,
-            "chat_history": chat_history
-        })
+        return redirect(url_for('chatbot'))
     except Exception as e:
         app.logger.error(f"Error in chatbot API call: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": f"An error occurred while processing your request: {str(e)}"
-        }), 500
+        return render_template('chatbot.html', chat_history=chat_history, error="An error occurred while processing your request.")
 
 @app.route('/clear_chat', methods=['POST'])
 @login_required
@@ -295,7 +264,7 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    return redirect(url_for('chatbot'))
+    return redirect(url_for('process_pdf'))
 
 @app.route('/save_prompt', methods=['POST'])
 @login_required
@@ -384,18 +353,12 @@ def process_pdf():
 @app.route('/reset', methods=['POST'])
 @login_required
 def reset():
-    # Store the user_id before clearing the session
-    user_id = session.get('user_id')
-    
     session_id = session.get('session_id')
     if session_id:
         file_path = os.path.join(app.config['SESSION_FILE_DIR'], f"{session_id}.json")
         if os.path.exists(file_path):
             os.remove(file_path)
-    
-    # Clear the session, but keep the user logged in
     session.clear()
-    session['user_id'] = user_id
     
     # Delete all files in the upload folder
     for filename in os.listdir(app.config['UPLOAD_FOLDER']):
@@ -408,11 +371,7 @@ def reset():
         except Exception as e:
             print(f"Failed to delete {file_path}. Reason: {e}")
     
-    # Clear the chat history
-    session['chat_history'] = []
-    
-    # Redirect to the chatbot route
-    return redirect(url_for('chatbot'))
+    return redirect(url_for('index'))
 
 @app.route('/final_process', methods=['GET', 'POST'])
 @login_required
