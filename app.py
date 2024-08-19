@@ -218,7 +218,7 @@ def login():
         password = request.form['password']
         if authenticate_user(username, password):
             session['user_id'] = username
-            return redirect(url_for('index'))
+            return redirect(url_for('chatbot'))
         else:
             return render_template('login.html', error='Invalid credentials')
     return render_template('login.html')
@@ -376,12 +376,11 @@ def register():
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 @app.route('/')
-@login_required
 def index():
-    return redirect(url_for('chatbot'))
+    return render_template('index.html')
 
 @app.route('/save_prompt', methods=['POST'])
 @login_required
@@ -467,7 +466,7 @@ def process_pdf():
         saved_prompts = load_saved_prompts()
         return render_template('process.html', filename='', token_count=0, form_data=form_data, saved_prompts=saved_prompts)
     
-@app.route('/reset', methods=['POST'])
+@app.route('/reset', methods=['GET', 'POST'])
 @login_required
 def reset():
     # Store the user_id before clearing the session
@@ -495,7 +494,7 @@ def reset():
             print(f"Failed to delete {file_path}. Reason: {e}")
     
     # Clear the chat history
-    session['chat_history'] = []
+    save_chat_history(user_id, [])
     
     # Redirect to the chatbot route
     return redirect(url_for('chatbot'))
