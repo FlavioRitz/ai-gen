@@ -1,55 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1 class="mb-4">Final Processing</h1>
+<h1 class="mb-4">Processamento final</h1>
 
 <form method="POST" enctype="multipart/form-data">
     <div class="mb-3">
-        <label for="file" class="form-label">Upload PDF (Optional):</label>
+        <label for="file" class="form-label">Upload de PDF (Opcional):</label>
         <input type="file" class="form-control" id="file" name="file" accept=".pdf">
     </div>
 
 {% if pdf_results %}
-    <h2>Available PDF Results:</h2>
+    <h2>Resultados disponíveis:</h2>
     <ul>
     {% for result in pdf_results %}
         <li>{{ result.title }}</li>
     {% endfor %}
     </ul>
 {% else %}
-    <p>No PDF results available. Please process PDFs before final processing.</p>
+    <p>Não há resultados anteriores.</p>
 {% endif %}
 
 <form action="{{ url_for('final_process') }}" method="post">
     <div class="mb-3">
         <label for="provider" class="form-label">AI Provider:</label>
         <select class="form-select" id="provider" name="provider" required>
-            <option value="together" {% if form_data.get('provider') == 'together' %}selected{% endif %}>Together AI</option>
+         <!--    <option value="together" {% if form_data.get('provider') == 'together' %}selected{% endif %}>Together AI</option> -->
             <option value="google" {% if form_data.get('provider') == 'google' %}selected{% endif %}>Google AI</option>
             <option value="googleproexp" {% if form_data.get('provider') == 'googleproexp' %}selected{% endif %}>Google AI Pro</option>
             <option value="googlepro" {% if form_data.get('provider') == 'googlepro' %}selected{% endif %}>Google AI Pro 1.5</option>
-            <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
-            <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>
+<!--             <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
+             <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>-->
             <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI Mini</option>
         </select>
     </div>
     <div class="mb-3">
-        <label for="final_prompt" class="form-label">Final Prompt:</label>
+        <label for="final_prompt" class="form-label">Prompt final:</label>
         <textarea class="form-control" id="final_prompt" name="final_prompt" rows="3" required>{{ form_data.get('final_prompt', '') }}</textarea>
     </div>
     <div class="mb-3">
-        <label for="additional_context" class="form-label">Additional Context:</label>
+        <label for="additional_context" class="form-label">Contexto adicional:</label>
         <textarea class="form-control" id="additional_context" name="additional_context" rows="3">{{ form_data.get('additional_context', '') }}</textarea>
     </div>
     <div class="mb-3">
-        <label for="temperature" class="form-label">Temperature:</label>
+        <label for="temperature" class="form-label">Temperatura:</label>
         <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" min="0" max="1" value="{{ form_data.get('temperature', 0.7) }}" required>
     </div>
     <div class="mb-3">
         <label for="max_tokens" class="form-label">Max Tokens:</label>
         <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', 1000) }}" required>
     </div>
-    <button type="submit" class="btn btn-primary">Process Final Result</button>
+    <button type="submit" class="btn btn-primary">Processamento final</button>
 </form>
 
 {% endblock %}
