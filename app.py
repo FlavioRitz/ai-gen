@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, session
+from flask import Flask, send_file, render_template, request, jsonify, send_from_directory, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 import shutil
 from datetime import datetime
 import uuid
+from io import BytesIO
+
 
 # Import the user authentication module
 from user_auth import login_required, register_user, authenticate_user
@@ -285,6 +287,37 @@ def chatbot_send():
             "status": "error",
             "message": f"An error occurred while processing your request: {str(e)}"
         }), 500
+
+@app.route('/download_chat_history')
+@login_required
+def download_chat_history():
+    chat_history = session.get('chat_history', [])
+    
+    # Check if chat history is empty
+    if not chat_history:
+        return jsonify({"error": "Chat history is empty"}), 400
+    
+    # Create a string containing the chat history
+    chat_content = "Chat History:\n\n"
+    for message in chat_history:
+        if message['role'] != 'system':
+            chat_content += f"{message['role'].capitalize()}: {message['content']}\n\n"
+    
+    # Create a BytesIO object
+    buffer = BytesIO()
+    buffer.write(chat_content.encode('utf-8'))
+    buffer.seek(0)
+    
+    # Generate a filename with the current timestamp
+    timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+    filename = f"chat_history_{timestamp}.txt"
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='text/plain'
+    )
 
 @app.route('/clear_chat', methods=['POST'])
 @login_required
