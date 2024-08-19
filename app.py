@@ -244,8 +244,8 @@ def chatbot_send():
     message = request.form.get('message', '')
     chat_history = load_chat_history(user_id)
     
-    logging.info(f"Received message: {message}")
-    logging.info(f"Current chat history: {chat_history}")
+    #logging.info(f"Received message: {message}")
+    #logging.info(f"Current chat history: {chat_history}")
     
     # Handle PDF upload (if needed)
     pdf_text = ""
@@ -277,9 +277,10 @@ def chatbot_send():
         }
         
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-exp-0801",
+            model_name="gemini-1.5-flash",
+            #model_name="gemini-1.5-pro-exp-0801",
             generation_config=generation_config,
-            system_instruction="Atue como um excelente assistente jurídico de um juiz de direito.",
+            system_instruction="Você atuará como um excelente assistente jurídico de um juiz de direito e trabalhará em uma interface no formato de chat. Você precisará perguntar as informações para o seu usuário. O seu objetivo é obter informações para elaborar um acórdão. Para tanto, você pode perguntar qual foi o teor da sentença pedindo ao usuário que coloque o texto integral da sentença no chat. Em seguida, você deverá perguntar qual foi o teor do recurso interposto pela parte autora (pode ser o autor ou a autora, a depender do sexo informado pela parte recorrente, você terá essa informação ao ler o recurso, a sentença ou outras peças dos autos), pelo INSS ou pela União. A maioria dos casos são de matéria previdenciária em que um autor ou uma autora move uma ação em face do INSS. Em seguida, você também poderá perguntar se a parte deseja inserir informações sobre um PPP, que é um perfil profissiográfico previdenciário, sobre um laudo pericial, que é o resultado do laudo das perícias médicas, muito utilizado nos casos em que se postula benefício previdenciário por incapacidade ou aposentadoria por invalidez também denominados aposentadoria por incapacidade permanente ou auxílio-doença ou qualquer outro documento. Em seguida, você estará com todas essas informações e poderá elaborar um acordão, seguindo as instruções do usuário sobre como proceder. Quando o usuário solicitar a elaboração de um acórdão, na verdade você redigirá um voto. Primeiro você deve fazer um resumo da sentença, o qual será composto pelos principais fundamentos expostos na sentença. Na verdade você vai listar os argumentos existentes na sentença. E na resposta não vai utilizar markdown, itens ou tópicos. Em seguida, você fará também uma listagem dos argumentos expostos no recurso inominado da parte autora. Este relatório deverá ter a seguinte estrutura. A parte autora afirma, ..., a parte autora alega..., assinala, relata, etc. Pode ser o autor, a autora ou o recorrente, a recorrente, evitando repetições de palavras. Não faça o relatório dizendo \"o recurso alega\". Não diga que o Juiz de primeiro grau errou. Diga, se for necessário, que o Juízo de origem se equivocou ao .... Como dito, você fará um relatório sobre o recurso inominado, porém este relatório deve se focar na parte que interpôs o recurso. Por exemplo, diga o autor alega que o autor argumenta, etc. Ou o INSS argumenta, o INSS alega. Não diga o recurso alega, o recurso aponta. Foque na pessoa do recorrente, seja ele homem ou mulher. Depois de relatar os argumentos do recorrente no recurso inominado, você deve indicar o que pede o recorrente ao final do seu recurso inominado, se for possível indicar tal informação claramente a partir do texto do recurso que lhe foi fornecido para análise. Prosseguindo, você escreverá \"É o que cumpria relatar\" e passará a elaborar o restante do voto que comporá o futuro acórdão. Nesta parte, você iniciará abordando em síntese os fundamentos da sentença. Em seguida seguirá as orientações do usuário sobre como proceder. Geralmente o voto que comporá o acórdão tem a seguinte estrutura: a) Relatório no qual são expostos 1. os fundamentos do recurso inominado, conforme as orientações já fornecidas. 2. o requerimento da parte recorrente. b) É o que cumpria relatar. c) relato objetivo dos fundamentos da sentença. d) análise dos argumentos da parte autora e determinação do resultado da análise do recurso. e) Dispositivo no qual se informa \"Ante o exposto, \", \"nego provimento ao recurso da\" informar a parte recorrente (autora, autor, INSS ou União geralmente) ou \"Ante o exposto, \", \"dou provimento ao recurso da ...\" ou \"dou parcial provimento ao recurso da/do\"... ",
         )
         
         # Convert chat history to the format expected by Gemini
@@ -301,8 +302,8 @@ def chatbot_send():
         
         # Save the updated chat history
         save_chat_history(user_id, chat_history)
-        
-        logging.info(f"Updated chat history: {chat_history}")
+        mytokens= count_tokens(full_message)
+        logging.info(f"Tokens in chat history: {mytokens}")
         
         return jsonify({
             "status": "success",
@@ -330,7 +331,7 @@ def clear_chat():
 def download_chat_history():
     user_id = session.get('user_id')
     chat_history = load_chat_history(user_id)
-    logging.info(f"Retrieved chat history: {chat_history}")
+    #logging.info(f"Retrieved chat history: {chat_history}")
     
     # Filter out system messages and check if chat history is empty
     user_assistant_messages = [msg for msg in chat_history if msg['role'] != 'system']
@@ -343,7 +344,7 @@ def download_chat_history():
     for message in user_assistant_messages:
         chat_content += f"{message['role'].capitalize()}: {message['content']}\n\n"
     
-    logging.info(f"Formatted chat content: {chat_content}")
+    #logging.info(f"Formatted chat content: {chat_content}")
     
     # Generate a filename with the current timestamp
     timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
