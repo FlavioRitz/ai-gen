@@ -13,7 +13,7 @@ import shutil
 from datetime import datetime
 import uuid
 from io import BytesIO
-
+import logging
 
 # Import the user authentication module
 from user_auth import login_required, register_user, authenticate_user
@@ -25,6 +25,12 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SESSION_FILE_DIR'] = 'session_files'
+app.config['CHAT_HISTORY_DIR'] = 'chat_histories'
+
+# Ensure chat history directory exists
+os.makedirs(app.config['CHAT_HISTORY_DIR'], exist_ok=True)
+
+logging.basicConfig(level=logging.INFO)
 
 PROMPTS_FILE = 'saved_prompts.json'
 
@@ -39,6 +45,21 @@ together_client = Together(api_key=os.getenv('TOGETHER_API_KEY'))
 genai.configure(api_key=os.getenv('GOOGLE_AI_API_KEY'))
 groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+def get_chat_history_path(user_id):
+    return os.path.join(app.config['CHAT_HISTORY_DIR'], f"{user_id}_chat_history.json")
+
+def load_chat_history(user_id):
+    file_path = get_chat_history_path(user_id)
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_chat_history(user_id, chat_history):
+    file_path = get_chat_history_path(user_id)
+    with open(file_path, 'w') as f:
+        json.dump(chat_history, f)
 
 def load_saved_prompts():
     if os.path.exists(PROMPTS_FILE):
@@ -205,23 +226,29 @@ def login():
 @app.route('/chatbot', methods=['GET'])
 @login_required
 def chatbot():
-    chat_history = session.get('chat_history', [])
+    user_id = session.get('user_id')
+    chat_history = load_chat_history(user_id)
     
     # If chat history is empty, initialize it with the system message
     if not chat_history:
         system_message = "Você atuará como um excelente assistente jurídico de um juiz de direito. Você trabalhará em uma interface no formato de chat. Você precisará perguntar as informações para o seu usuário. O seu objetivo é obter informações sobre qual foi o teor da sentença pedindo ao usuário que coloque o texto integral da sentença. Em seguida, você deve buscar do usuário saber qual foi o teor do recurso interposto pela parte autora, pelo INSS, pela União ou por outro órgão. Seu objetivo é também obter essas informações a respeito do recurso. Em seguida, você também poderá perguntar se a parte deseja inserir informações sobre um PPP, que é um perfil profissiográfico previdenciário, ou sobre um laudo pericial, que é o resultado do laudo das perícias médicas, muito utilizado nos casos em que se postula benefício providenciário por incapacidade ou aposentadoria por invalidez também denominados aposentadoria por incapacidade permanente ou auxílio-doença. Em seguida, você estará com todas essas informações e deverá elaborar um acordão. Mas primeiro você deve fazer um resumo da sentença. Esse resumo da sentença será composto por uma lista. Na verdade você vai listar os argumentos existentes na sentença. E na resposta não vai utilizar markdown, itens ou tópicos. Em seguida, você fará também uma listagem dos argumentos expostos no recurso inominado da parte autora, evitando repetições de palavras. Você fará um relatório sobre o recurso inominado, porém este relatório deve se focar na parte que interpôs o recurso. Por exemplo, diga o autor alega que o autor argumenta, etc. Ou o INSS argumenta, o INSS alega. Não diga o recurso alega, o recurso aponta. Foque na pessoa do recorrente, seja ele homem ou mulher."
         chat_history.append({"role": "system", "content": system_message})
-        session['chat_history'] = chat_history
+        save_chat_history(user_id, chat_history)
     
     return render_template('chatbot.html', chat_history=chat_history)
 
 @app.route('/chatbot_send', methods=['POST'])
 @login_required
 def chatbot_send():
+    user_id = session.get('user_id')
     message = request.form.get('message', '')
-    chat_history = session.get('chat_history', [])
+    chat_history = load_chat_history(user_id)
     
-    # Handle PDF upload
+    logging.info(f"Received message: {message}")
+    logging.info(f"Current chat history: {chat_history}")
+    
+    # Handle PDF upload (if needed)
+    pdf_text = ""
     if 'pdf' in request.files:
         pdf_file = request.files['pdf']
         if pdf_file and allowed_file(pdf_file.filename):
@@ -232,31 +259,27 @@ def chatbot_send():
             # Extract text from PDF
             pdf_text = extract_text_from_pdf(file_path)
             
-            # Prepend PDF text to the message
-            message = f"Aqui está o texto que estou enviando: {pdf_text}\n\n{message}"
-            
             # Remove the temporary PDF file
             os.remove(file_path)
     
-    if not chat_history:
-        # Initialize with system message
-        system_message = "Você atuará como um excelente assistente jurídico de um juiz de direito. Você trabalhará em uma interface no formato de chat. Você precisará perguntar as informações para o seu usuário. O seu objetivo é obter informações sobre qual foi o teor da sentença pedindo ao usuário que coloque o texto integral da sentença. Em seguida, você deve buscar do usuário saber qual foi o teor do recurso interposto pela parte autora, pelo INSS, pela União ou por outro órgão. Seu objetivo é também obter essas informações a respeito do recurso. Em seguida, você também poderá perguntar se a parte deseja inserir informações sobre um PPP, que é um perfil profissiográfico previdenciário, ou sobre um laudo pericial, que é o resultado do laudo das perícias médicas, muito utilizado nos casos em que se postula benefício providenciário por incapacidade ou aposentadoria por invalidez também denominados aposentadoria por incapacidade permanente ou auxílio-doença. Em seguida, você estará com todas essas informações e deverá elaborar um acordão. Mas primeiro você deve fazer um resumo da sentença. Esse resumo da sentença será composto por uma lista. Na verdade você vai listar os argumentos existentes na sentença. E na resposta não vai utilizar markdown, itens ou tópicos. Em seguida, você fará também uma listagem dos argumentos expostos no recurso inominado da parte autora, evitando repetições de palavras. Você fará um relatório sobre o recurso inominado, porém este relatório deve se focar na parte que interpôs o recurso. Por exemplo, diga o autor alega que o autor argumenta, etc. Ou o INSS argumenta, o INSS alega. Não diga o recurso alega, o recurso aponta. Foque na pessoa do recorrente, seja ele homem ou mulher."
-        chat_history.append({"role": "system", "content": system_message})
-    
-    chat_history.append({"role": "user", "content": message})
+    # Combine user message with PDF text
+    full_message = f"{message}\n\nAqui está o texto do PDF que estou enviando:\n{pdf_text}" if pdf_text else message
     
     try:
+        genai.configure(api_key=os.environ["GOOGLE_AI_API_KEY"])
+        
         generation_config = {
-            "temperature": 0.7,
+            "temperature": 0.6,
             "top_p": 0.95,
             "top_k": 64,
-            "max_output_tokens": 3000,
+            "max_output_tokens": 8192,
             "response_mime_type": "text/plain",
         }
         
         model = genai.GenerativeModel(
             model_name="gemini-1.5-pro-exp-0801",
             generation_config=generation_config,
+            system_instruction="Atue como um excelente assistente jurídico de um juiz de direito.",
         )
         
         # Convert chat history to the format expected by Gemini
@@ -268,13 +291,18 @@ def chatbot_send():
                 gemini_history.append({"role": "model", "parts": [msg["content"]]})
         
         chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(message)
+        response = chat_session.send_message(full_message)
         
         assistant_message = response.text
+        
+        # Update chat history
+        chat_history.append({"role": "user", "content": full_message})
         chat_history.append({"role": "assistant", "content": assistant_message})
         
-        # Store the updated chat history in the session
-        session['chat_history'] = chat_history
+        # Save the updated chat history
+        save_chat_history(user_id, chat_history)
+        
+        logging.info(f"Updated chat history: {chat_history}")
         
         return jsonify({
             "status": "success",
@@ -282,48 +310,51 @@ def chatbot_send():
             "chat_history": chat_history
         })
     except Exception as e:
-        app.logger.error(f"Error in chatbot API call: {str(e)}")
+        logging.error(f"Error in chatbot API call: {str(e)}")
         return jsonify({
             "status": "error",
             "message": f"An error occurred while processing your request: {str(e)}"
         }), 500
+                        
+@app.route('/clear_chat', methods=['POST'])
+@login_required
+def clear_chat():
+    user_id = session.get('user_id')
+    file_path = get_chat_history_path(user_id)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    return redirect(url_for('chatbot'))
 
 @app.route('/download_chat_history')
 @login_required
 def download_chat_history():
-    chat_history = session.get('chat_history', [])
+    user_id = session.get('user_id')
+    chat_history = load_chat_history(user_id)
+    logging.info(f"Retrieved chat history: {chat_history}")
     
-    # Check if chat history is empty
-    if not chat_history:
+    # Filter out system messages and check if chat history is empty
+    user_assistant_messages = [msg for msg in chat_history if msg['role'] != 'system']
+    if not user_assistant_messages:
+        logging.warning("Chat history is empty or contains only system messages")
         return jsonify({"error": "Chat history is empty"}), 400
     
     # Create a string containing the chat history
     chat_content = "Chat History:\n\n"
-    for message in chat_history:
-        if message['role'] != 'system':
-            chat_content += f"{message['role'].capitalize()}: {message['content']}\n\n"
+    for message in user_assistant_messages:
+        chat_content += f"{message['role'].capitalize()}: {message['content']}\n\n"
     
-    # Create a BytesIO object
-    buffer = BytesIO()
-    buffer.write(chat_content.encode('utf-8'))
-    buffer.seek(0)
+    logging.info(f"Formatted chat content: {chat_content}")
     
     # Generate a filename with the current timestamp
     timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
     filename = f"chat_history_{timestamp}.txt"
     
     return send_file(
-        buffer,
+        BytesIO(chat_content.encode('utf-8')),
         as_attachment=True,
         download_name=filename,
         mimetype='text/plain'
     )
-
-@app.route('/clear_chat', methods=['POST'])
-@login_required
-def clear_chat():
-    session.pop('chat_history', None)
-    return redirect(url_for('chatbot'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

@@ -27,10 +27,11 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-uploads/
-session_files/
+chat_histories/*
+uploads/*
+session_files/*
 Resultado*.*
-saved_prompts.json
+
 
 
 
