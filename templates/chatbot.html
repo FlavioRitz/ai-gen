@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="container mt-4">
-    <h4 class="mb-4">Chatbot</h4>
+    <h4 id="chatbot" class="mb-4">Chatbot</h4>
 
     <div id="chat-messages" style="height: 350px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
         {% for message in chat_history %}
             {% if message.role != 'system' %}
-                <p><strong>{{ message.role|capitalize }}:</strong> {{ message.content }}</p>
+                <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %}">
+                    <strong>{{ message.role|capitalize }}:</strong>
+                    <pre class="message-content">{{ message.content|safe }}</pre>
+                </div>
             {% endif %}
         {% endfor %}
     </div>
@@ -19,14 +23,14 @@
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
     </div>
 
-    <form id="chat-form" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="pdf-upload" class="form-label">Upload de arquivos PDF (opcional)</label>
-            <input type="file" class="form-control" id="pdf-upload" name="pdf" accept=".pdf">
-        </div>
+    <div class="mb-3">
+        Upload de arquivos PDF (opcional)
+    </div>
 
+    <form id="chat-form" enctype="multipart/form-data">
         <div class="input-group mb-3">
-            <input type="text" id="user-input" class="form-control" placeholder="Digite sua mensagem aqui...">
+            <input type="file" class="form-control" name="pdf" accept=".pdf">
+            <input type="text" class="form-control" name="message" placeholder="Digite sua mensagem...">
             <button class="btn btn-primary" type="submit">Send</button>
         </div>
     </form>
@@ -37,61 +41,107 @@
     </div>
 </div>
 
+<style>
+    .message {
+        margin-bottom: 10px;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    .user-message {
+        background-color: #e6f3ff;
+    }
+    .assistant-message {
+        background-color: #f0f0f0;
+    }
+    .message-content {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: inherit;
+        font-size: inherit;
+        margin: 0;
+        padding: 0;
+        background-color: transparent;
+        border: none;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    document.getElementById('chat-form').addEventListener('submit', function(e) {
+$(document).ready(function() {
+    var chatMessages = $('#chat-messages');
+    var processingMessage = $('#processing-message');
+    var progressBar = $('#progress-bar');
+    var chatForm = $('#chat-form');
+
+    chatForm.on('submit', function(e) {
         e.preventDefault();
-        var userInput = document.getElementById('user-input').value;
-        var pdfFile = document.getElementById('pdf-upload').files[0];
-        
-        var formData = new FormData();
-        formData.append('message', userInput);
-        if (pdfFile) {
-            formData.append('pdf', pdfFile);
-        }
+        var formData = new FormData(this);
 
-        document.getElementById('processing-message').style.display = 'block';
-        document.getElementById('progress-bar').style.display = 'block';
+        $.ajax({
+            url: '/chatbot_send',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                processingMessage.show();
+                progressBar.show();
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Clear the chat messages
+                    chatMessages.empty();
 
-        fetch('/chatbot_send', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                var chatMessages = document.getElementById('chat-messages');
-                chatMessages.innerHTML += '<p><strong>You:</strong> ' + userInput + '</p>';
-                chatMessages.innerHTML += '<p><strong>Assistant:</strong> ' + data.message + '</p>';
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                document.getElementById('user-input').value = '';
-                document.getElementById('pdf-upload').value = '';
-            } else {
-                alert('Error: ' + data.message);
+                    // Add all messages from the updated chat history
+                    response.chat_history.forEach(function(message) {
+                        if (message.role !== 'system') {
+                            var messageClass = message.role === 'user' ? 'user-message' : 'assistant-message';
+                            var messageHtml = '<div class="message ' + messageClass + '">' +
+                                              '<strong>' + message.role.charAt(0).toUpperCase() + message.role.slice(1) + ':</strong>' +
+                                              '<pre class="message-content">' + message.content + '</pre>' +
+                                              '</div>';
+                            chatMessages.append(messageHtml);
+                        }
+                    });
+
+                    // Scroll to the bottom of the chat
+                    chatMessages.scrollTop(chatMessages[0].scrollHeight);
+
+                    // Clear the input field
+                    $('input[name="message"]').val('');
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred: ' + error);
+            },
+            complete: function() {
+                processingMessage.hide();
+                progressBar.hide();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while processing your request.');
-        })
-        .finally(() => {
-            document.getElementById('processing-message').style.display = 'none';
-            document.getElementById('progress-bar').style.display = 'none';
         });
     });
 
-    document.getElementById('clear-chat').addEventListener('click', function() {
-        if (confirm('Você tem certeza que quer limpar o histórico ?')) {
-            fetch('/clear_chat', {
-                method: 'POST'
-            })
-            .then(() => {
-                location.reload();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while clearing the chat history.');
+    $('#clear-chat').on('click', function() {
+        if (confirm('Você tem certeza de que quer limpar o histórico ?.')) {
+            $.ajax({
+                url: '/clear_chat',
+                type: 'POST',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        chatMessages.empty();
+                        alert('Histórico apagado com sucesso.');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('An error occurred while clearing chat history: ' + error);
+                }
             });
         }
     });
+});
 </script>
+
 {% endblock %}

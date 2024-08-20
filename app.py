@@ -50,8 +50,8 @@ SYSTEM_INSTRUCTION = '''Você é um assistente jurídico altamente qualificado, 
    a) Relatório:
       - Liste os principais argumentos da sentença sem usar marcadores ou formatação especial.
       - Resuma os argumentos do recurso, focando na parte recorrente:
-        * Use "O(A) autor(a)/recorrente alega..." para pessoas físicas.
-        * Use "O INSS/A União, a CEF argumenta..." para instituições.
+        * Use "O autor alega..." ou "A autora alega" para pessoas físicas, a depender do caso. Poderá utilizar também "O recorrente" ou "a recorrente".
+        * Use "O INSS", "A União", "A CEF" sustenta, alega, argumenta, etc para instituições a depender de quem for o recorrente.
       - Indique o pedido final do recorrente.
       - Conclua com "É o que cumpria relatar".
    b) Voto:
@@ -59,15 +59,15 @@ SYSTEM_INSTRUCTION = '''Você é um assistente jurídico altamente qualificado, 
       - Analise os argumentos da parte recorrente.
       - Determine o resultado da análise do recurso, seguindo as instruções do usuário.
    c) Dispositivo:
-      - Use fórmulas como "Ante o exposto, nego/dou provimento ao recurso de [parte recorrente]" ou "dou parcial provimento ao recurso de [parte recorrente]".
+      - Use fórmulas como "Ante o exposto, nego provimento ao recurso de [parte recorrente]" ou "dou parcial provimento ao recurso de [parte recorrente]".
 
 4. Diretrizes Gerais:
    - Mantenha o foco em questões jurídicas.
    - Adapte-se às instruções específicas do usuário.
    - Evite dizer que o "Juiz de primeiro grau errou". Use "o Juízo de origem se equivocou" se necessário.
-   - Não use a expressão "o recurso alega". Foque na pessoa ou instituição recorrente.
+   - Não use a expressão "o recurso alega". Foque na pessoa ou instituição recorrente. Diga o recorrente alega..., aduz, afirma, assinala, destaca, argumenta, etc
    - Seja flexível quanto à ordem de recebimento das informações e esteja preparado para realizar tarefas parciais.
-   - Lembre-se que a maioria dos casos são previdenciários, envolvendo um autor/autora contra o INSS.
+   - Lembre-se que a maioria dos casos são previdenciários, envolvendo um autor/autora que propõe uma ação em face do INSS.
 
 5. Interação:
    - Solicite esclarecimentos quando necessário.
@@ -336,19 +336,20 @@ def chatbot_send():
         response = chat_session.send_message(full_message)
         
         assistant_message = response.text
-        
+
         # Update chat history
         chat_history.append({"role": "user", "content": full_message})
         chat_history.append({"role": "assistant", "content": assistant_message})
-        
-        # Save the updated chat history
+    
+         # Save the updated chat history
         save_chat_history(user_id, chat_history)
-        
+    
         return jsonify({
             "status": "success",
             "message": assistant_message,
             "chat_history": chat_history
-        })
+        })        
+
     except Exception as e:
         logging.error(f"Error in chatbot API call: {str(e)}")
         return jsonify({
@@ -363,7 +364,14 @@ def clear_chat():
     file_path = get_chat_history_path(user_id)
     if os.path.exists(file_path):
         os.remove(file_path)
-    return redirect(url_for('chatbot'))
+    
+    # Initialize an empty chat history
+    save_chat_history(user_id, [])
+    
+    return jsonify({
+        "status": "success",
+        "message": "Chat history cleared successfully"
+    })
 
 @app.route('/download_chat_history')
 @login_required
