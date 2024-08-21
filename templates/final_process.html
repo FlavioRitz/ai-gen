@@ -1,55 +1,112 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 {% block content %}
 
-<h1 class="mb-4">Processamento final</h1>
+<h1 id="processamento-final" class="mb-4">Processamento final</h1>
 
-<form method="POST" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label for="file" class="form-label">Upload de PDF (Opcional):</label>
-        <input type="file" class="form-control" id="file" name="file" accept=".pdf">
-    </div>
+<div class="mb-3">
+    <label for="file">Upload de PDF (Opcional):</label>
+    <input type="file" id="file" name="file" accept=".pdf" class="form-control">
+</div>
 
 {% if pdf_results %}
-    <h2>Resultados disponíveis:</h2>
-    <ul>
+<h2>Resultados disponíveis:</h2>
+<ul>
     {% for result in pdf_results %}
-        <li>{{ result.title }}</li>
+    <li>{{ result.title }}</li>
     {% endfor %}
-    </ul>
+</ul>
 {% else %}
-    <p>Não há resultados anteriores.</p>
+<p>Não há resultados anteriores.</p>
 {% endif %}
 
-<form action="{{ url_for('final_process') }}" method="post">
+<form method="POST">
     <div class="mb-3">
-        <label for="provider" class="form-label">AI Provider:</label>
-        <select class="form-select" id="provider" name="provider" required>
-         <!--    <option value="together" {% if form_data.get('provider') == 'together' %}selected{% endif %}>Together AI</option> -->
-            <option value="google" {% if form_data.get('provider') == 'google' %}selected{% endif %}>Google AI</option>
-            <option value="googleproexp" {% if form_data.get('provider') == 'googleproexp' %}selected{% endif %}>Google AI Pro</option>
-            <option value="googlepro" {% if form_data.get('provider') == 'googlepro' %}selected{% endif %}>Google AI Pro 1.5</option>
-<!--             <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
-             <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>-->
-            <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI Mini</option>
+        <label for="provider">AI Provider:</label>
+        <select id="provider" name="provider" class="form-control">
+            <option value="google">Google AI</option>
+            <option value="googlepro">Google AI Pro</option>
+            <option value="googleproexp">Google AI Pro 1.5</option>
+            <option value="openaimini">OpenAI Mini</option>
         </select>
     </div>
+
     <div class="mb-3">
-        <label for="final_prompt" class="form-label">Prompt final:</label>
-        <textarea class="form-control" id="final_prompt" name="final_prompt" rows="3" required>{{ form_data.get('final_prompt', '') }}</textarea>
+        <label for="saved_prompts">Prompts salvos:</label>
+        <select id="saved_prompts" name="saved_prompts" class="form-control">
+            <option value="">Selecione um prompt salvo</option>
+            {% for prompt in saved_prompts %}
+            <option value="{{ prompt.prompt }}">{{ prompt.title }}</option>
+            {% endfor %}
+        </select>
     </div>
+
     <div class="mb-3">
-        <label for="additional_context" class="form-label">Contexto adicional:</label>
-        <textarea class="form-control" id="additional_context" name="additional_context" rows="3">{{ form_data.get('additional_context', '') }}</textarea>
+        <label for="prompt_title">Título do prompt:</label>
+        <input type="text" id="prompt_title" name="prompt_title" class="form-control">
     </div>
+
     <div class="mb-3">
-        <label for="temperature" class="form-label">Temperatura:</label>
-        <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" min="0" max="1" value="{{ form_data.get('temperature', 0.7) }}" required>
+        <label for="final_prompt">Prompt final:</label>
+        <textarea id="final_prompt" name="final_prompt" rows="5" class="form-control">{{ form_data.get('final_prompt', '') }}</textarea>
     </div>
+
     <div class="mb-3">
-        <label for="max_tokens" class="form-label">Max Tokens:</label>
-        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', 1000) }}" required>
+        <label for="additional_context">Contexto adicional:</label>
+        <textarea id="additional_context" name="additional_context" rows="3" class="form-control">{{ form_data.get('additional_context', '') }}</textarea>
     </div>
+
+    <div class="mb-3">
+        <label for="temperature">Temperatura:</label>
+        <input type="number" id="temperature" name="temperature" step="0.1" min="0" max="1" value="{{ form_data.get('temperature', '0.7') }}" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label for="max_tokens">Max Tokens:</label>
+        <input type="number" id="max_tokens" name="max_tokens" value="{{ form_data.get('max_tokens', '1000') }}" class="form-control">
+    </div>
+
     <button type="submit" class="btn btn-primary">Processamento final</button>
+    <button type="button" id="save_prompt" class="btn btn-secondary">Gravar Prompt</button>
 </form>
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.getElementById('saved_prompts').addEventListener('change', function() {
+        document.getElementById('final_prompt').value = this.value;
+    });
+
+    document.getElementById('save_prompt').addEventListener('click', function() {
+        var title = document.getElementById('prompt_title').value;
+        var prompt = document.getElementById('final_prompt').value;
+        
+        if (!title || !prompt) {
+            alert('Por favor, preencha o título e o prompt antes de salvar.');
+            return;
+        }
+
+        fetch('/save_prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'prompt_title=' + encodeURIComponent(title) + '&user_prompt=' + encodeURIComponent(prompt)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Prompt salvo com sucesso!');
+                var select = document.getElementById('saved_prompts');
+                var option = document.createElement('option');
+                option.text = title;
+                option.value = prompt;
+                select.add(option);
+            } else {
+                alert('Erro ao salvar o prompt.');
+            }
+        });
+    });
+</script>
 {% endblock %}

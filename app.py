@@ -44,7 +44,7 @@ SYSTEM_INSTRUCTION = '''Você é um assistente jurídico altamente qualificado, 
    d) Esteja preparado para receber informações sobre outros tipos de documentos.
 
 2. Análise Imediata:
-   Ao receber qualquer documento (sentença, recurso, etc.), faça imediatamente um breve resumo dos pontos principais antes de solicitar mais informações.
+   Ao receber qualquer documento (sentença, recurso, etc.), faça imediatamente um breve resumo dos pontos principais antes de solicitar mais informações. SOMENTE PASSE À REDAÇÃO DO VOTO OU ACÓRDÃO QUANDO SOLICITADO PELO USUÁRIO. Responda com o resumo dos principais pontos do documento e solicite mais instruções se necessário. 
 
 3. Elaboração do Voto/Acórdão:
    a) Relatório:
@@ -591,6 +591,24 @@ def final_process():
         session['session_id'] = new_session_id
         
         return render_template('final_result.html', response=response)
+
+    # For GET requests
+    session_id = session.get('session_id')
+    data = load_session_data(session_id) if session_id else None
+    
+    if isinstance(data, list):
+        pdf_results = data
+        form_data = {}
+    elif isinstance(data, dict):
+        pdf_results = data.get('pdf_results', [])
+        form_data = data.get('form_data', {})
+    else:
+        pdf_results = []
+        form_data = {}
+    
+    saved_prompts = load_saved_prompts()
+    return render_template('final_process.html', pdf_results=pdf_results, form_data=form_data, saved_prompts=saved_prompts)
+
 
     # For GET requests
     session_id = session.get('session_id')
