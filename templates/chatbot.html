@@ -123,7 +123,7 @@ $(document).ready(function() {
     });
 
     $('#clear-chat').on('click', function() {
-        if (confirm('Você tem certeza de que quer limpar o histórico ?.')) {
+        if (confirm('Você tem certeza de que quer limpar o histórico ?')) {
             $.ajax({
                 url: '/clear_chat',
                 type: 'POST',

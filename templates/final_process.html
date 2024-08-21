@@ -21,21 +21,22 @@
 
 <form method="POST">
     <div class="mb-3">
-        <label for="provider">AI Provider:</label>
-        <select id="provider" name="provider" class="form-control">
-            <option value="google">Google AI</option>
-            <option value="googlepro">Google AI Pro</option>
-            <option value="googleproexp">Google AI Pro 1.5</option>
-            <option value="openaimini">OpenAI Mini</option>
-        </select>
-    </div>
-
+        <label for="provider" class="form-label">Provedor de IA:</label>
+        <select class="form-select" id="provider" name="provider" required>
+            <!--    <option value="together" {% if form_data.get('provider') == 'together' %}selected{% endif %}>Together AI</option> -->
+               <option value="google" {% if form_data.get('provider') == 'google' %}selected{% endif %}>Google AI</option>
+               <option value="googleproexp" {% if form_data.get('provider') == 'googleproexp' %}selected{% endif %}>Google AI Pro</option>
+               <option value="googlepro" {% if form_data.get('provider') == 'googlepro' %}selected{% endif %}>Google AI Pro 1.5</option>
+           <!--<option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
+               <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>-->
+               <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI Mini</option>
+        </select>    
     <div class="mb-3">
-        <label for="saved_prompts">Prompts salvos:</label>
-        <select id="saved_prompts" name="saved_prompts" class="form-control">
+        <label for="saved_prompts" class="form-label">Prompts salvos:</label>
+        <select class="form-select" id="saved_prompts" onchange="loadSelectedPrompt()">
             <option value="">Selecione um prompt salvo</option>
             {% for prompt in saved_prompts %}
-            <option value="{{ prompt.prompt }}">{{ prompt.title }}</option>
+                <option value="{{ prompt.prompt }}">{{ prompt.title }}</option>
             {% endfor %}
         </select>
     </div>
@@ -65,48 +66,70 @@
         <input type="number" id="max_tokens" name="max_tokens" value="{{ form_data.get('max_tokens', '1000') }}" class="form-control">
     </div>
 
+    <button type="button" class="btn btn-secondary" onclick="savePrompt()">Gravar Prompt</button>
     <button type="submit" class="btn btn-primary">Processamento final</button>
-    <button type="button" id="save_prompt" class="btn btn-secondary">Gravar Prompt</button>
+    
 </form>
 
-{% endblock %}
+<script>
+    function loadSelectedPrompt() {
+        var select = document.getElementById('saved_prompts');
+        var promptArea = document.getElementById('final_prompt');
+        promptArea.value = select.value;
+    }
+    
+    function savePrompt() {
+        var titleInput = document.getElementById('prompt_title');
+        var promptArea = document.getElementById('final_prompt');
+        var title = titleInput.value;
+        var prompt = promptArea.value;
+        if (title && prompt) {
+            fetch('{{ url_for("save_prompt_route") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'prompt_title=' + encodeURIComponent(title) + '&user_prompt=' + encodeURIComponent(prompt)
+            }).then(response => {
+                if (response.ok) {
+                    // Update the saved prompts list without reloading the page
+                    return response.json();
+                } else {
+                    throw new Error('Failed to save prompt.');
+                }
+            }).then(data => {
+                updateSavedPromptsList(data.saved_prompts);
+                titleInput.value = ''; // Clear the title input
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        } else {
+            alert('Por favor insira o título e o texto do prompt a ser salvo.');
+        }
+    }
+    
+    function updateSavedPromptsList(savedPrompts) {
+        var select = document.getElementById('saved_prompts');
+        select.innerHTML = '<option value="">Select a saved prompt</option>';
+        savedPrompts.forEach(function(prompt) {
+            var option = document.createElement('option');
+            option.value = prompt.prompt;
+            option.textContent = prompt.title;
+            select.appendChild(option);
+        });
+    }
+    </script>
 
+{% endblock %}
 {% block scripts %}
 {{ super() }}
 <script>
-    document.getElementById('saved_prompts').addEventListener('change', function() {
-        document.getElementById('final_prompt').value = this.value;
-    });
-
-    document.getElementById('save_prompt').addEventListener('click', function() {
-        var title = document.getElementById('prompt_title').value;
-        var prompt = document.getElementById('final_prompt').value;
-        
-        if (!title || !prompt) {
-            alert('Por favor, preencha o título e o prompt antes de salvar.');
-            return;
-        }
-
-        fetch('/save_prompt', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'prompt_title=' + encodeURIComponent(title) + '&user_prompt=' + encodeURIComponent(prompt)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Prompt salvo com sucesso!');
-                var select = document.getElementById('saved_prompts');
-                var option = document.createElement('option');
-                option.text = title;
-                option.value = prompt;
-                select.add(option);
-            } else {
-                alert('Erro ao salvar o prompt.');
-            }
-        });
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're coming back from final_process
+    if (document.referrer.includes('final_process')) {
+        // Clear the additional context input
+        document.getElementById('additional_context').value = '';
+    }
+});
 </script>
 {% endblock %}
