@@ -468,6 +468,10 @@ def process_pdf():
         max_tokens = request.form['max_tokens']
         additional_context = request.form['additional_context']
         
+        
+        # Save the form data in the session
+        session['form_data'] = request.form.to_dict()
+        
         # Prepare full prompt
         if filename:
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -509,10 +513,41 @@ def process_pdf():
     else:
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else {}
-        form_data = data.get('form_data', {}) if isinstance(data, dict) else {}
+        form_data = session.get('form_data', {})
         saved_prompts = load_saved_prompts()
         return render_template('process.html', filename='', token_count=0, form_data=form_data, saved_prompts=saved_prompts)
+  
+@app.route('/update_results', methods=['POST'])
+@login_required
+def update_results():
+    selected_indices = request.form.getlist('selected_results')
+    selected_indices = [int(index) for index in selected_indices]
+
+    session_id = session.get('session_id')
+    data = load_session_data(session_id)
+
+    if data and 'pdf_results' in data:
+        updated_results = [result for i, result in enumerate(data['pdf_results']) if i in selected_indices]
+        data['pdf_results'] = updated_results
+        new_session_id = save_session_data(data)
+        session['session_id'] = new_session_id
+
+    # Save the selected indices in the session
+    session['selected_indices'] = selected_indices
+
+    return render_template('updated_results.html', results=updated_results)
+
+@app.route('/results')
+@login_required
+def results():
+    session_id = session.get('session_id')
+    data = load_session_data(session_id) if session_id else None
     
+    if not data or 'pdf_results' not in data:
+        return redirect(url_for('process_pdf'))
+    
+    return render_template('results.html', results=data['pdf_results'])
+
 @app.route('/reset', methods=['GET', 'POST'])
 @login_required
 def reset():
@@ -571,9 +606,7 @@ def final_process():
         session_id = session.get('session_id')
         data = load_session_data(session_id) if session_id else None
         
-        if isinstance(data, list):
-            pdf_results = data
-        elif isinstance(data, dict):
+        if isinstance(data, dict):
             pdf_results = data.get('pdf_results', [])
         else:
             pdf_results = []
@@ -597,10 +630,7 @@ def final_process():
     session_id = session.get('session_id')
     data = load_session_data(session_id) if session_id else None
     
-    if isinstance(data, list):
-        pdf_results = data
-        form_data = {}
-    elif isinstance(data, dict):
+    if isinstance(data, dict):
         pdf_results = data.get('pdf_results', [])
         form_data = data.get('form_data', {})
     else:
