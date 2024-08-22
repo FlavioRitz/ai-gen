@@ -34,12 +34,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <button id="resetButton" class="nav-link btn btn-link {% if 'user_id' not in session %}disabled{% endif %}"
+                                {% if 'user_id' not in session %}tabindex="-1" aria-disabled="true"{% endif %}>
+                            Limpar peças e histórico
+                        </button>
+                    </li>
+                    <!-- <li class="nav-item">
                         <a class="nav-link {% if 'user_id' not in session %}disabled{% endif %}" 
                            href="{{ url_for('reset') if 'user_id' in session else '#' }}"
                            {% if 'user_id' not in session %}tabindex="-1" aria-disabled="true"{% endif %}>
                             Reset  
                         </a>
-                    </li>
+                    </li> -->
                 </ul>
                 <ul class="navbar-nav">
                     {% if 'user_id' not in session %}
@@ -64,5 +70,33 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resetButton = document.getElementById('resetButton');
+            if (resetButton) {
+                resetButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get the current path
+                    const currentPath = window.location.pathname;
+                    
+                    // Determine the redirect URL based on the current path
+                    let redirectUrl;
+                    if (currentPath.includes('/chatbot')) {
+                        redirectUrl = '{{ url_for("reset") }}?redirect=chatbot';
+                    } else if (currentPath.includes('/process')) {
+                        redirectUrl = '{{ url_for("reset") }}?redirect=process';
+                    } else if (currentPath.includes('/final_process')) {
+                        redirectUrl = '{{ url_for("reset") }}?redirect=final_process';
+                    } else {
+                        redirectUrl = '{{ url_for("reset") }}';
+                    }
+                    
+                    // Redirect to the appropriate URL
+                    window.location.href = redirectUrl;
+                });
+            }
+        });
+        </script>
 </body>
 </html>

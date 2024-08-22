@@ -516,7 +516,6 @@ def process_pdf():
 @app.route('/reset', methods=['GET', 'POST'])
 @login_required
 def reset():
-    # Store the user_id before clearing the session
     user_id = session.get('user_id')
     
     session_id = session.get('session_id')
@@ -525,11 +524,9 @@ def reset():
         if os.path.exists(file_path):
             os.remove(file_path)
     
-    # Clear the session, but keep the user logged in
     session.clear()
     session['user_id'] = user_id
     
-    # Delete all files in the upload folder
     for filename in os.listdir(app.config['UPLOAD_FOLDER']):
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         try:
@@ -540,11 +537,15 @@ def reset():
         except Exception as e:
             print(f"Failed to delete {file_path}. Reason: {e}")
     
-    # Clear the chat history
     save_chat_history(user_id, [])
     
-    # Redirect to the chatbot route
-    return redirect(url_for('chatbot'))
+    redirect_to = request.args.get('redirect', 'chatbot')
+    if redirect_to == 'process':
+        return redirect(url_for('process_pdf'))
+    elif redirect_to == 'final_process':
+        return redirect(url_for('final_process'))
+    else:
+        return redirect(url_for('chatbot'))
 
 @app.route('/final_process', methods=['GET', 'POST'])
 @login_required
@@ -608,23 +609,6 @@ def final_process():
     
     saved_prompts = load_saved_prompts()
     return render_template('final_process.html', pdf_results=pdf_results, form_data=form_data, saved_prompts=saved_prompts)
-
-
-    # For GET requests
-    session_id = session.get('session_id')
-    data = load_session_data(session_id) if session_id else None
-    
-    if isinstance(data, list):
-        pdf_results = data
-        form_data = {}
-    elif isinstance(data, dict):
-        pdf_results = data.get('pdf_results', [])
-        form_data = data.get('form_data', {})
-    else:
-        pdf_results = []
-        form_data = {}
-    
-    return render_template('final_process.html', pdf_results=pdf_results, form_data=form_data)
     
 @app.route('/save_results', methods=['POST'])
 @login_required
