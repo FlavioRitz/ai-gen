@@ -51,6 +51,8 @@
         <textarea id="final_prompt" name="final_prompt" rows="5" class="form-control">{{ form_data.get('final_prompt', '') }}</textarea>
     </div>
 
+    <button type="button" class="btn btn-primary" onclick="savePrompt()">Gravar Prompt</button>
+
     <div class="mb-3">
         <label for="additional_context">Contexto adicional:</label>
         <textarea id="additional_context" name="additional_context" rows="3" class="form-control">{{ form_data.get('additional_context', '') }}</textarea>
@@ -66,9 +68,11 @@
         <input type="number" id="max_tokens" name="max_tokens" value="{{ form_data.get('max_tokens', '1000') }}" class="form-control">
     </div>
 
-    <button type="button" class="btn btn-secondary" onclick="savePrompt()">Gravar Prompt</button>
-    <button type="submit" class="btn btn-primary">Processamento final</button>
-    
+        
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{{ url_for('results') }}" class="btn btn-primary">Voltar para lista de resultados</a>
+        <button class="btn btn-success">Processamento final</button>
+    </div>
 </form>
 
 <script>

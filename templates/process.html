@@ -53,7 +53,9 @@
         <label for="user_prompt" class="form-label">Prompt do usuário:</label>
         <textarea class="form-control" id="user_prompt" name="user_prompt" rows="3" required>{{ form_data.get('user_prompt', '') }}</textarea>
     </div>
-
+    
+    <button type="button" class="btn btn-primary" onclick="savePrompt()">Gravar Prompt</button>
+    
     <div class="mb-3">
         <label for="additional_context" class="form-label">Contexto adicional:</label>
         <textarea class="form-control" id="additional_context" name="additional_context" rows="3">{{ form_data.get('additional_context', '') }}</textarea>
@@ -69,8 +71,7 @@
         <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', '2000') }}" required>
     </div>
 
-    <button type="button" class="btn btn-secondary" onclick="savePrompt()">Gravar Prompt</button>
-    <button type="submit" class="btn btn-primary">Processar</button>
+    <button type="submit" class="btn btn-success">Processar</button>
 </form>
 
 <script>

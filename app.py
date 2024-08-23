@@ -468,10 +468,6 @@ def process_pdf():
         max_tokens = request.form['max_tokens']
         additional_context = request.form['additional_context']
         
-        
-        # Save the form data in the session
-        session['form_data'] = request.form.to_dict()
-        
         # Prepare full prompt
         if filename:
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -488,9 +484,7 @@ def process_pdf():
         
         # Save results
         session_id = session.get('session_id')
-        data = load_session_data(session_id) if session_id else {}
-        
-        pdf_results = data.get('pdf_results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
+        data = load_session_data(session_id) if session_id else {'pdf_results': []}
         
         new_result = {
             'title': title,
@@ -499,24 +493,25 @@ def process_pdf():
             'filename': filename
         }
         
-        pdf_results.append(new_result)
+        data['pdf_results'].append(new_result)
         
-        new_data = {
-            'pdf_results': pdf_results,
-            'form_data': request.form
-        }
-        new_session_id = save_session_data(new_data)
+        new_session_id = save_session_data(data)
         session['session_id'] = new_session_id
         
-        # Render results page
-        return render_template('results.html', results=pdf_results, latest_result=new_result)
+        return redirect(url_for('results'))
     else:
-        session_id = session.get('session_id')
-        data = load_session_data(session_id) if session_id else {}
         form_data = session.get('form_data', {})
         saved_prompts = load_saved_prompts()
         return render_template('process.html', filename='', token_count=0, form_data=form_data, saved_prompts=saved_prompts)
   
+@app.route('/results')
+@login_required
+def results():
+    session_id = session.get('session_id')
+    data = load_session_data(session_id) if session_id else {'pdf_results': []}
+    
+    return render_template('results.html', results=data['pdf_results'])
+
 @app.route('/update_results', methods=['POST'])
 @login_required
 def update_results():
@@ -532,21 +527,7 @@ def update_results():
         new_session_id = save_session_data(data)
         session['session_id'] = new_session_id
 
-    # Save the selected indices in the session
-    session['selected_indices'] = selected_indices
-
-    return render_template('updated_results.html', results=updated_results)
-
-@app.route('/results')
-@login_required
-def results():
-    session_id = session.get('session_id')
-    data = load_session_data(session_id) if session_id else None
-    
-    if not data or 'pdf_results' not in data:
-        return redirect(url_for('process_pdf'))
-    
-    return render_template('results.html', results=data['pdf_results'])
+    return render_template('updated_results.html', results=data['pdf_results'])
 
 @app.route('/reset', methods=['GET', 'POST'])
 @login_required
