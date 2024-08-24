@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 {% if results %}
-<h2>Resultados: </h2>
-<form action="{{ url_for('update_results') }}" method="post">
+
+<h2>Resultados:</h2>
+
+<form id="resultsForm" method="POST" action="{{ url_for('update_results') }}">
     {% for result in results %}
     <div class="card mb-3">
         <div class="card-body">
@@ -13,14 +15,18 @@
                 </label>
             </div>
             <h6 class="card-subtitle mb-2 text-muted">Tokens: {{ result.token_count }}</h6>
-            <p class="card-text">{{ result.response }}</p>
+            <p>{{ result.response }}</p>
         </div>
     </div>
     {% endfor %}
-    <button type="submit" class="btn btn-primary">Descartar os resultados não selecionados</button>
+
+    <button type="submit" class="btn btn-warning" id="updateButton">Remover os resultados desmarcados</button>
 </form>
+
 {% else %}
+
 <p>No previous results.</p>
+
 {% endif %}
 
 <div class="mt-3">
@@ -29,4 +35,19 @@
     <a href="{{ url_for('final_process') }}" class="btn btn-success">Seguir para o processamento de todos os resultados</a>
     {% endif %}
 </div>
+
+<script>
+document.getElementById('resultsForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    var checkboxes = document.querySelectorAll('input[name="selected_results"]:checked');
+    if (checkboxes.length < this.querySelectorAll('input[name="selected_results"]').length) {
+        if (confirm('Tem certeza que deseja remover os resultados desmarcados?')) {
+            this.submit();
+        }
+    } else {
+        this.submit();
+    }
+});
+</script>
+
 {% endblock %}
