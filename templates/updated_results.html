@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Updated Results</h2>
+<h2>Resultados atualizados:</h2>
 {% if results %}
     {% for result in results %}
     <div class="card mb-3">
@@ -12,12 +12,12 @@
     </div>
     {% endfor %}
     <div class="mt-3">
-        <a href="{{ url_for('process_pdf') }}" class="btn btn-secondary">Back to Process</a>
-        <a href="{{ url_for('final_process') }}" class="btn btn-success">Proceed to final processing</a>
-        <a href="{{ url_for('process_pdf') }}" class="btn btn-primary">Process another PDF</a>
+        <a href="{{ url_for('process_pdf') }}" class="btn btn-secondary">Retornar ao processamento de PDFs</a>
+        <a href="{{ url_for('results') }}" class="btn btn-primary">Retornar aos resultados</a>
+        <a href="{{ url_for('final_process') }}" class="btn btn-success">Prosseguir para o processamento final</a>
     </div>
 {% else %}
-    <p>No results selected. Would you like to process another PDF?</p>
-    <a href="{{ url_for('process_pdf') }}" class="btn btn-primary">Process another PDF</a>
+    <p>Não há resultados selecionados. Gostaria de processar outro PDF ou texto?</p>
+    <a href="{{ url_for('process_pdf') }}" class="btn btn-primary">Processar PDF ou texto</a>
 {% endif %}
 {% endblock %}
