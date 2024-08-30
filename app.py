@@ -158,7 +158,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-1.5-flash-exp-0827",
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -176,7 +176,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-exp-0801", # Experimental model
+            model_name="gemini-1.5-pro-exp-0827", # Experimental model
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -218,7 +218,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
     
     elif provider == 'openai':
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
@@ -230,7 +230,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
     
     elif provider == 'openaimini':
         response = openai_client.chat.completions.create(
-            model="gpt-4o-2024-08-06", # Added the new openai model
+            model="gpt-4o-mini", # Added the new openai model
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
