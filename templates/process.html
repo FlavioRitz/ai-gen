@@ -18,7 +18,7 @@
     {% endif %}
 
     <div class="mb-3">
-        <label for="title" class="form-label">Título:</label>
+        <label for="title" class="form-label">Título da peça que será analisada:</label>
         <input type="text" class="form-control" id="title" name="title" value="{{ form_data.get('title', '') }}" required>
     </div>
 
@@ -29,15 +29,15 @@
                <option value="google" {% if form_data.get('provider') == 'google' %}selected{% endif %}>Google AI</option>
                <option value="googleproexp" {% if form_data.get('provider') == 'googleproexp' %}selected{% endif %}>Google AI Pro</option>
                <option value="googlepro" {% if form_data.get('provider') == 'googlepro' %}selected{% endif %}>Google AI Pro 1.5</option>
-   <!--             <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
-                <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>-->
+                <option value="groq" {% if form_data.get('provider') == 'groq' %}selected{% endif %}>Groq</option>
+                <option value="openai" {% if form_data.get('provider') == 'openai' %}selected{% endif %}>OpenAI</option>
                <option value="openaimini" {% if form_data.get('provider') == 'openaimini' %}selected{% endif %}>OpenAI Mini</option>
         </select>
     </div>
     <div class="mb-3">
         <label for="saved_prompts" class="form-label">Prompts salvos:</label>
         <select class="form-select" id="saved_prompts" onchange="loadSelectedPrompt()">
-            <option value="">Selecione um prompt salvo</option>
+            <option value="">Selecione um prompt salvo. Para salvar um novo prompt, digite-o e, em seguida, clique em "Gravar Prompt"</option>
             {% for prompt in saved_prompts %}
                 <option value="{{ prompt.prompt }}">{{ prompt.title }}</option>
             {% endfor %}
@@ -53,13 +53,13 @@
         <label for="user_prompt" class="form-label">Prompt do usuário:</label>
         <textarea class="form-control" id="user_prompt" name="user_prompt" rows="3" required>{{ form_data.get('user_prompt', '') }}</textarea>
     </div>
-    
-    <button type="button" class="btn btn-primary" onclick="savePrompt()">Gravar Prompt</button>
-    
+        
     <div class="mb-3">
         <label for="additional_context" class="form-label">Contexto adicional:</label>
         <textarea class="form-control" id="additional_context" name="additional_context" rows="3">{{ form_data.get('additional_context', '') }}</textarea>
     </div>
+
+    <button type="submit" class="btn btn-success">Processar</button>
 
     <div class="mb-3">
         <label for="temperature" class="form-label">Temperatura:</label>
@@ -71,7 +71,8 @@
         <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" value="{{ form_data.get('max_tokens', '2000') }}" required>
     </div>
 
-    <button type="submit" class="btn btn-success">Processar</button>
+    <button type="button" class="btn btn-primary" onclick="savePrompt()">Gravar Prompt</button>
+    
 </form>
 
 <script>

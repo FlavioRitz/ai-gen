@@ -158,7 +158,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-exp-0827",
+            model_name="gemini-2.0-flash-lite-preview-02-05",
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -176,7 +176,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-exp-0827", # Experimental model
+            model_name="gemini-2.0-pro-exp-02-05", # Pro2
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -193,7 +193,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
             "response_mime_type": "text/plain",
         }
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
+            model_name="gemini-2.0-pro-exp-02-05",
             generation_config=generation_config,
             system_instruction=system_message,
         )
@@ -203,7 +203,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
     
     elif provider == 'groq':
         response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama-3.2-90b-text-preview",
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
@@ -218,7 +218,7 @@ def generate_response(provider, system_message, user_input, temperature, max_tok
     
     elif provider == 'openai':
         response = openai_client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_input}
@@ -319,7 +319,7 @@ def chatbot_send():
         }
         
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-exp-0801",
+            model_name="gemini-2.0-pro-exp-02-05",
             generation_config=generation_config,
             system_instruction=SYSTEM_INSTRUCTION,
         )
